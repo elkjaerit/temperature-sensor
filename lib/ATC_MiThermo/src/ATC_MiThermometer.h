@@ -50,7 +50,7 @@
 #ifndef ATC_MiThermometer_h
 #define ATC_MiThermometer_h
 
-//#define ATC_MiThermometer_DEBUG
+#define ATC_MiThermometer_DEBUG
 #include <Arduino.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -75,6 +75,7 @@
  */
 struct MiThData_S {
         bool        valid;          //!< data valid
+        std::string name;
         int16_t     temperature;    //!< temperature x 100°C
         uint16_t    humidity;       //!< humidity x 100%
         uint16_t    batt_voltage;   //!< battery voltage [mv]
@@ -99,7 +100,7 @@ class ATC_MiThermometer {
          */
         ATC_MiThermometer(std::vector<std::string> known_sensors) {
             _known_sensors = known_sensors;
-            data.resize(known_sensors.size());
+            data.resize(2);
         };
 
         /*!
