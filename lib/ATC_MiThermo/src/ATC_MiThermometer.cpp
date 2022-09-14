@@ -123,7 +123,19 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
     BLEScanResults foundDevices = _pBLEScan->start(duration, false /* is_continue */);
     
     DEBUG_PRINTLN("Assigning scan results...");
-    
+
+    int supportedDevices = 0;
+    for (unsigned i = 0; i < foundDevices.getCount(); i++)
+    {
+        // Skip devices with wrong ServiceDataUUID
+        if (BLEUUID((uint16_t)0x181a).equals(foundDevices.getDevice(i).getServiceDataUUID()))
+        {
+            supportedDevices++;
+        }
+    }
+
+    data.resize(supportedDevices);
+
     // Known bug in Arduino BLE library - fix available:
     // "ESP32 BLE scan, example works but devices found is always 0"
     // https://forum.arduino.cc/t/esp32-ble-scan-example-works-but-devices-found-is-always-0/876703    
@@ -131,44 +143,38 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
         // Skip devices with wrong ServiceDataUUID
         if (!BLEUUID((uint16_t)0x181a).equals(foundDevices.getDevice(i).getServiceDataUUID()))
             continue;
-        
+
         // Match all devices found against list of known sensors
-        for (unsigned n = 0; n < _known_sensors.size(); n++) {
+        for (unsigned n = 0; n < supportedDevices; n++) {
             DEBUG_PRINT("Found: ");
             DEBUG_PRINT(foundDevices.getDevice(i).getAddress().toString().c_str());
-            DEBUG_PRINT(" comparing to: ");
-            DEBUG_PRINT(BLEAddress(_known_sensors[n]).toString().c_str());
-            //if (foundDevices.getDevice(i).getAddress() == BLEAddress(_known_sensors[n])) {
-                DEBUG_PRINT(" -> Match! Index: ");
-                DEBUG_PRINTLN(n);
-                data[n].valid = true;
-            
-                // Temperature
-                int temp_msb = foundDevices.getDevice(i).getServiceData().c_str()[7];
-                int temp_lsb = foundDevices.getDevice(i).getServiceData().c_str()[6];
-                data[n].temperature = (temp_msb << 8) | temp_lsb;
+                
+            data[n].valid = true;
+            data[n].name = foundDevices.getDevice(i).getAddress().toString();
+        
+            // Temperature
+            int temp_msb = foundDevices.getDevice(i).getServiceData().c_str()[7];
+            int temp_lsb = foundDevices.getDevice(i).getServiceData().c_str()[6];
+            data[n].temperature = (temp_msb << 8) | temp_lsb;
 
-                // Humidity
-                int hum_msb = foundDevices.getDevice(i).getServiceData().c_str()[9];
-                int hum_lsb = foundDevices.getDevice(i).getServiceData().c_str()[8];
-                data[n].humidity = (hum_msb << 8) | hum_lsb;
+            // Humidity
+            int hum_msb = foundDevices.getDevice(i).getServiceData().c_str()[9];
+            int hum_lsb = foundDevices.getDevice(i).getServiceData().c_str()[8];
+            data[n].humidity = (hum_msb << 8) | hum_lsb;
 
-                // Battery voltage
-                int volt_msb = foundDevices.getDevice(i).getServiceData().c_str()[11];
-                int volt_lsb = foundDevices.getDevice(i).getServiceData().c_str()[10];
-                data[n].batt_voltage = (volt_msb << 8) | volt_lsb;
+            // Battery voltage
+            int volt_msb = foundDevices.getDevice(i).getServiceData().c_str()[11];
+            int volt_lsb = foundDevices.getDevice(i).getServiceData().c_str()[10];
+            data[n].batt_voltage = (volt_msb << 8) | volt_lsb;
 
-                // Battery state [%]
-                data[n].batt_level = foundDevices.getDevice(i).getServiceData().c_str()[12];         
-            
-                // Received Signal Strength Indicator [dBm]
-                data[n].rssi = foundDevices.getDevice(i).getRSSI();
-            //} else {
-           //     DEBUG_PRINTLN();
-          //  }
+            // Battery state [%]
+            data[n].batt_level = foundDevices.getDevice(i).getServiceData().c_str()[12];         
+        
+            // Received Signal Strength Indicator [dBm]
+            data[n].rssi = foundDevices.getDevice(i).getRSSI();       
         }
     }
-    return foundDevices.getCount();
+    return supportedDevices;
 }
 
         
