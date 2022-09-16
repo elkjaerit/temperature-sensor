@@ -62,9 +62,11 @@
     #define DEBUG_PORT Serial
     #define DEBUG_PRINT(...) { DEBUG_PORT.print(__VA_ARGS__); }
     #define DEBUG_PRINTLN(...) { DEBUG_PORT.println(__VA_ARGS__); }
+    #define DEBUG_PRINTF(...) { DEBUG_PORT.printf(__VA_ARGS__); }
 #else
     #define DEBUG_PRINT(...) {}
     #define DEBUG_PRINTLN(...) {}
+    #define DEBUG_PRINTF(...) {}
 #endif
 
 
@@ -135,5 +137,6 @@ class ATC_MiThermometer {
         BLEScan*                 _pBLEScan;    
     private:
         void doIt(void);
+        unsigned countSupportedDevices(BLEScanResults devices);
 };
 #endif

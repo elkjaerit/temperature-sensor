@@ -121,25 +121,10 @@ void ATC_MiThermometer::begin(void)
 // Get sensor data by running BLE device scan
 unsigned ATC_MiThermometer::getData(uint32_t duration) {
     BLEScanResults foundDevices = _pBLEScan->start(duration, false /* is_continue */);
-    
-    DEBUG_PRINTLN("Assigning scan results...");
-    
 
-    int supportedDevices = 0;
-    for (unsigned i=0; i< foundDevices.getCount(); i++) {
-        DEBUG_PRINTLN("Counting...");
-        
-        // Skip devices with wrong ServiceDataUUID
-        if (BLEUUID((uint16_t)0x181a).equals(foundDevices.getDevice(i).getServiceDataUUID())) {
-            supportedDevices++;
-        } else if (BLEUUID((uint16_t)0xfe95).equals(foundDevices.getDevice(i).getServiceDataUUID())){
-            DEBUG_PRINTLN("************************");
-            DEBUG_PRINT("Another supported device!");
-            DEBUG_PRINTLN("************************");
-
-        }
-    }
-            
+    // Initialize data vector    
+    int supportedDevices = countSupportedDevices(foundDevices);
+    DEBUG_PRINTF("Supported devices found: %d\n", supportedDevices);            
     data.resize(supportedDevices);
 
     doIt();
@@ -189,6 +174,23 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
 
 void ATC_MiThermometer::doIt(void){
     DEBUG_PRINTLN("internale funciton");
+}
+
+unsigned ATC_MiThermometer::countSupportedDevices(BLEScanResults devices){
+    int supportedDevices = 0;
+    for (unsigned i=0; i< devices.getCount(); i++) {
+        DEBUG_PRINTLN("Counting...");
+        
+        // Skip devices with wrong ServiceDataUUID
+        if (BLEUUID((uint16_t)0x181a).equals(devices.getDevice(i).getServiceDataUUID())) {
+            supportedDevices++;
+        } else if (BLEUUID((uint16_t)0xfe95).equals(devices.getDevice(i).getServiceDataUUID())){
+            supportedDevices++;
+        } else {
+            
+        }
+    }
+    return supportedDevices;
 }
 
 // Set all array members invalid
