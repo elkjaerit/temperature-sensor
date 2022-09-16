@@ -123,27 +123,37 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
     BLEScanResults foundDevices = _pBLEScan->start(duration, false /* is_continue */);
     
     DEBUG_PRINTLN("Assigning scan results...");
+    
 
     int supportedDevices = 0;
-    for (unsigned i = 0; i < foundDevices.getCount(); i++)
-    {
+    for (unsigned i=0; i< foundDevices.getCount(); i++) {
+        DEBUG_PRINTLN("Counting...");
+        
         // Skip devices with wrong ServiceDataUUID
-        if (BLEUUID((uint16_t)0x181a).equals(foundDevices.getDevice(i).getServiceDataUUID()))
-        {
+        if (BLEUUID((uint16_t)0x181a).equals(foundDevices.getDevice(i).getServiceDataUUID())) {
             supportedDevices++;
+        } else if (BLEUUID((uint16_t)0xfe95).equals(foundDevices.getDevice(i).getServiceDataUUID())){
+            DEBUG_PRINTLN("************************");
+            DEBUG_PRINT("Another supported device!");
+            DEBUG_PRINTLN("************************");
+
         }
     }
-
+            
     data.resize(supportedDevices);
+
+    doIt();
 
     // Known bug in Arduino BLE library - fix available:
     // "ESP32 BLE scan, example works but devices found is always 0"
     // https://forum.arduino.cc/t/esp32-ble-scan-example-works-but-devices-found-is-always-0/876703    
+    Serial.printf("Iteration: %d \n", foundDevices.getCount());
     for (unsigned i=0; i< foundDevices.getCount(); i++) {
+        
         // Skip devices with wrong ServiceDataUUID
         if (!BLEUUID((uint16_t)0x181a).equals(foundDevices.getDevice(i).getServiceDataUUID()))
             continue;
-
+        
         // Match all devices found against list of known sensors
         for (unsigned n = 0; n < supportedDevices; n++) {
             DEBUG_PRINT("Found: ");
@@ -177,11 +187,14 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
     return supportedDevices;
 }
 
-        
+void ATC_MiThermometer::doIt(void){
+    DEBUG_PRINTLN("internale funciton");
+}
+
 // Set all array members invalid
 void ATC_MiThermometer::resetData(void)
 {
-    for (int i=0; i < _known_sensors.size(); i++) {
-        data[i].valid = false;
-    }
+    //for (int i=0; i < _known_sensors.size(); i++) {
+    //    data[i].valid = false;
+    //}
 }

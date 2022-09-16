@@ -95,11 +95,9 @@ class ATC_MiThermometer {
     public:
         /*!
          * \brief Constructor.
-         *
-         * \param known_sensors List of BT MAC addresses of known sensors
+         *         
          */
-        ATC_MiThermometer(std::vector<std::string> known_sensors) {
-            _known_sensors = known_sensors;
+        ATC_MiThermometer(std::vector<std::string> known_sensors) {            
             data.resize(2);
         };
 
@@ -134,7 +132,8 @@ class ATC_MiThermometer {
         std::vector<MiThData_t>  data;
         
     protected:
-        std::vector<std::string> _known_sensors;
-        BLEScan*                 _pBLEScan;
+        BLEScan*                 _pBLEScan;    
+    private:
+        void doIt(void);
 };
 #endif
