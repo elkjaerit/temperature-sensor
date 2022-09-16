@@ -123,16 +123,15 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
     BLEScanResults foundDevices = _pBLEScan->start(duration, false /* is_continue */);
 
     // Initialize data vector    
-    int supportedDevices = countSupportedDevices(foundDevices);
-    DEBUG_PRINTF("Supported devices found: %d\n", supportedDevices);            
-    data.resize(supportedDevices);
-
-    doIt();
+    std::vector<BLEAdvertisedDevice> supportedDevices = countSupportedDevices(foundDevices);
+    DEBUG_PRINTF("Supported devices found: %d\n", supportedDevices.size());            
+    data.resize(supportedDevices.size());
 
     // Known bug in Arduino BLE library - fix available:
     // "ESP32 BLE scan, example works but devices found is always 0"
     // https://forum.arduino.cc/t/esp32-ble-scan-example-works-but-devices-found-is-always-0/876703    
     Serial.printf("Iteration: %d \n", foundDevices.getCount());
+
     for (unsigned i=0; i< foundDevices.getCount(); i++) {
         
         // Skip devices with wrong ServiceDataUUID
@@ -140,7 +139,7 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
             continue;
         
         // Match all devices found against list of known sensors
-        for (unsigned n = 0; n < supportedDevices; n++) {
+        for (unsigned n = 0; n < supportedDevices.size(); n++) {
             DEBUG_PRINT("Found: ");
             DEBUG_PRINT(foundDevices.getDevice(i).getAddress().toString().c_str());
                 
@@ -169,28 +168,27 @@ unsigned ATC_MiThermometer::getData(uint32_t duration) {
             data[n].rssi = foundDevices.getDevice(i).getRSSI();       
         }
     }
-    return supportedDevices;
+    return supportedDevices.size();
 }
 
-void ATC_MiThermometer::doIt(void){
-    DEBUG_PRINTLN("internale funciton");
-}
-
-unsigned ATC_MiThermometer::countSupportedDevices(BLEScanResults devices){
+std::vector<BLEAdvertisedDevice> ATC_MiThermometer::countSupportedDevices(BLEScanResults devices){
     int supportedDevices = 0;
+    std::vector<BLEAdvertisedDevice> result;
     for (unsigned i=0; i< devices.getCount(); i++) {
         DEBUG_PRINTLN("Counting...");
         
         // Skip devices with wrong ServiceDataUUID
         if (BLEUUID((uint16_t)0x181a).equals(devices.getDevice(i).getServiceDataUUID())) {
-            supportedDevices++;
+            result.push_back(devices.getDevice(i));
+            
         } else if (BLEUUID((uint16_t)0xfe95).equals(devices.getDevice(i).getServiceDataUUID())){
-            supportedDevices++;
+            
+            result.push_back(devices.getDevice(i));
         } else {
             
         }
     }
-    return supportedDevices;
+    return result;
 }
 
 // Set all array members invalid
