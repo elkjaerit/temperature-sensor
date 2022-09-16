@@ -136,7 +136,6 @@ class ATC_MiThermometer {
     protected:
         BLEScan*                 _pBLEScan;    
     private:
-        void doIt(void);
-        unsigned countSupportedDevices(BLEScanResults devices);
+        std::vector<BLEAdvertisedDevice> countSupportedDevices(BLEScanResults devices);
 };
 #endif
