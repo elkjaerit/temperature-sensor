@@ -9,60 +9,8 @@ class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
 {
     void onResult(BLEAdvertisedDevice advertisedDevice)
     {
-        if (advertisedDevice.haveServiceData())
-        {
-            char buff[20];
-            int datalen;
-
-            datalen = (*advertisedDevice.getServiceDataUUID().getNative()).len;
-            memcpy(buff, &(*advertisedDevice.getServiceDataUUID().getNative()).uuid, datalen);
-            // Serial.printf("UUID Len  %d \n", (*advertisedDevice.getServiceDataUUID().getNative()).len);
-            // Serial.printf("Service Data UUID length %d\n", datalen);
-            DEBUG_PRINT(">>>> ServiceDataUUID 0x");
-            for (int i = 0; i < datalen; i++)
-            {
-                DEBUG_PRINT((buff[i] < 16) ? "0" : "");
-                DEBUG_PRINT(buff[i], HEX);
-            }
-            DEBUG_PRINTLN();
-
-            // Gets full length
-            // DEBUG_PRINT(">>>> ServiceDataUUID 0x");
-            // DEBUG_PRINT(advertisedDevice.getServiceDataUUID().toString().c_str());
-
-            if (BLEUUID((uint16_t)0x181a).equals(advertisedDevice.getServiceDataUUID()))
-            {
-                datalen = advertisedDevice.getServiceData().length();
-                memcpy(buff, advertisedDevice.getServiceData().c_str(), datalen);
-                DEBUG_PRINTLN("Found a ServiceDataUUID for Temperature");
-                DEBUG_PRINT(">>>>  Service Data ");
-                for (int i = 0; i < datalen; i++)
-                {
-                    DEBUG_PRINT((advertisedDevice.getServiceData().c_str()[i] < 16) ? "0x0" : "0x");
-                    DEBUG_PRINT(advertisedDevice.getServiceData().c_str()[i], HEX);
-                    DEBUG_PRINT(" ");
-                }
-                DEBUG_PRINTLN();
-
-                if (advertisedDevice.haveName())
-                {
-                    DEBUG_PRINT("Name: ");
-                    DEBUG_PRINTLN(advertisedDevice.getName().c_str());
-                }
-                if (advertisedDevice.haveManufacturerData())
-                {
-                    DEBUG_PRINT("Manufacturer Data: ");
-                    DEBUG_PRINTLN(advertisedDevice.getManufacturerData().c_str());
-                }
-                DEBUG_PRINT("Device Address: ");
-                DEBUG_PRINTLN(advertisedDevice.getAddress().toString().c_str());
-            }
-            else
-            {
-                DEBUG_PRINTLN("ServiceDataUUID doesn't match");
-            }
-        } // if (advertisedDevice.haveServiceData())
-    }     // void onResult(BLEAdvertisedDevice advertisedDevice)
+        
+    }     
 };
 
 // Set up BLE scanning
