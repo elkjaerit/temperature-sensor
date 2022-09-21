@@ -1,5 +1,8 @@
 #include <Arduino.h>
+#include <esp_task_wdt.h>
 #include "ATC_MiThermometer.h"
+
+#include "esp32-mqtt.h"
 
 const int scanTime = 5; // BLE scan time in seconds
 
@@ -11,8 +14,13 @@ ATC_MiThermometer miThermometer(knownBLEAddresses);
 
 void setup() {
     Serial.begin(115200);
-    
+    esp_task_wdt_init(120, true);    
     // Initialization
+    setupCloudIoT();
+    esp_task_wdt_reset();
+  if (!mqttClient->connected()) {
+    connect();
+  }
     miThermometer.begin();
 }
 
