@@ -24,7 +24,48 @@ void setup() {
     miThermometer.begin();
 }
 
+String getDeviceId() {
+  String chipId = String((uint32_t)ESP.getEfuseMac(), HEX);
+  chipId.toUpperCase();
+  return chipId;
+}
+
+void sendBattery(char* macAddress, double batt, double rssi, long timestamp) {
+    
+  char data[150] = {};
+  sprintf(data, "{\"deviceId\": \"%s\", \"mac\": \"%s\", \"batt\": %.1f, \"rssi\": %.0f, \"timestamp\": %d}", getDeviceId().c_str(), macAddress, batt, rssi, timestamp);
+  Serial.println(data);
+
+  publishTelemetry(data);
+}
+
+void sendTempAndHumidity(char* macAddress, double temperature, double humidity, double rssi, long timestamp) {
+  char data[150] = {};
+  sprintf(data, "{\"deviceId\": \"%s\", \"mac\": \"%s\", \"temp\": %.1f, \"humidity\": %.1f, \"rssi\": %.0f, \"timestamp\": %d}", getDeviceId().c_str(), macAddress, temperature, humidity, rssi, timestamp);
+  Serial.println(data);
+
+  publishTelemetry(data);
+}
+
+// OLD ID: 68ABF498
+
+
+
+
 void loop() {
+
+  esp_task_wdt_add(NULL);  
+  mqtt->loop();
+  delay(10);
+  esp_task_wdt_reset();
+  delay(100);  // <- fixes some issues with WiFi stability
+  if (!mqttClient->connected()) {
+    Serial.println("Mqtt client not connected - reconnect");
+    connect();
+  }
+  esp_task_wdt_reset();
+
+
     // Set sensor data invalid
     miThermometer.resetData();
     
@@ -41,6 +82,26 @@ void loop() {
             Serial.printf("%.3fV\n",  miThermometer.data[i].batt_voltage/1000.0);
             Serial.printf("%d%%\n",   miThermometer.data[i].batt_level);
             Serial.printf("%ddBm\n",  miThermometer.data[i].rssi);
+
+
+
+            unsigned long timestamp = time(nullptr);
+
+            String name = miThermometer.data[i].name.c_str();
+            name.toUpperCase();
+
+            char* macAddress = const_cast<char*>(name.c_str());
+            
+
+            if (miThermometer.data[i].batt_level>0) {
+                sendBattery(macAddress, miThermometer.data[i].batt_level, miThermometer.data[i].rssi, timestamp);
+            }
+
+            if (miThermometer.data[i].temperature>0) {
+                sendTempAndHumidity(macAddress, miThermometer.data[i].temperature / 100.0, miThermometer.data[i].humidity / 100.0, miThermometer.data[i].rssi, timestamp);
+            }
+            
+
             Serial.println();
          }
     }
@@ -52,3 +113,4 @@ void loop() {
     miThermometer.clearScanResults();
     delay(5000);
 }
+
