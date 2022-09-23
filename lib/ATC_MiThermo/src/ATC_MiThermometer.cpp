@@ -1,24 +1,10 @@
 #include "ATC_MiThermometer.h"
 
-/*!
- * \class MyAdvertisedDeviceCallbacks
- *
- * \brief Callback for advertised device found during scan
- */
-class MyAdvertisedDeviceCallbacks : public BLEAdvertisedDeviceCallbacks
-{
-    void onResult(BLEAdvertisedDevice advertisedDevice)
-    {
-        
-    }     
-};
-
 // Set up BLE scanning
 void ATC_MiThermometer::begin(void)
 {
     BLEDevice::init("");
     _pBLEScan = BLEDevice::getScan(); // create new scan
-    _pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
     _pBLEScan->setActiveScan(false); // active scan uses more power, but get results faster
     _pBLEScan->setInterval(100);
     _pBLEScan->setWindow(99); // less or equal setInterval value
@@ -35,7 +21,7 @@ unsigned ATC_MiThermometer::getData(uint32_t duration)
 
     data.resize(supportedDevices.size());
 
-    Serial.printf("Iteration: %d \n", supportedDevices.size());
+    DEBUG_PRINTF("Iteration: %d \n", supportedDevices.size());
 
     for (unsigned i = 0; i < supportedDevices.size(); i++)
     {
@@ -114,12 +100,9 @@ unsigned ATC_MiThermometer::getData(uint32_t duration)
             {
             case 'a':
                 data[i].name = supportedDevices[i].getAddress().toString();
-
                 data[i].batt_level = value;
                 data[i].rssi = supportedDevices[i].getRSSI();
                 data[i].valid = true;
-
-                // sendBattery(macAddress, (double)value, advertisedDevice.getRSSI(), timestamp);
                 break;
             case 'd':
                 // humidity
@@ -135,7 +118,6 @@ unsigned ATC_MiThermometer::getData(uint32_t duration)
                     data[i].rssi = supportedDevices[i].getRSSI();
                     data[i].valid = true;
 
-                    // sendTempAndHumidity(macAddress, temperature, humidity, advertisedDevice.getRSSI(), timestamp);
                     break;
                 }
             default:

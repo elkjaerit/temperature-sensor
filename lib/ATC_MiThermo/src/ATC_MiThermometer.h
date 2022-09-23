@@ -50,7 +50,7 @@
 #ifndef ATC_MiThermometer_h
 #define ATC_MiThermometer_h
 
-#define ATC_MiThermometer_DEBUG
+//#define ATC_MiThermometer_DEBUG
 #include <Arduino.h>
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -99,7 +99,7 @@ class ATC_MiThermometer {
          * \brief Constructor.
          *         
          */
-        ATC_MiThermometer(std::vector<std::string> known_sensors) {            
+        ATC_MiThermometer(void) {            
             data.resize(2);
         };
 
