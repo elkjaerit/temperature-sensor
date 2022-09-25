@@ -11,11 +11,10 @@ void ATC_MiThermometer::begin(void)
 }
 
 // Get sensor data by running BLE device scan
-unsigned ATC_MiThermometer::getData(uint32_t duration)
+void ATC_MiThermometer::getData(uint32_t duration)
 {
     BLEScanResults foundDevices = _pBLEScan->start(duration, false /* is_continue */);
 
-    // Initialize data vector
     std::vector<BLEAdvertisedDevice> supportedDevices = getSupportedDevices(foundDevices);
     DEBUG_PRINTF("Supported devices found: %d\n", supportedDevices.size());
 
@@ -125,7 +124,9 @@ unsigned ATC_MiThermometer::getData(uint32_t duration)
             }
         }
     }
-    return supportedDevices.size();
+    // Memory clean up!
+    supportedDevices.clear();
+    supportedDevices.shrink_to_fit();
 }
 
 double ATC_MiThermometer::value_from_service_data(const char *service_data, int offset, int data_length)

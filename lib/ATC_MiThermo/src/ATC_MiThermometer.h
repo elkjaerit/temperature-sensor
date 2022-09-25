@@ -113,6 +113,8 @@ class ATC_MiThermometer {
          */        
         void clearScanResults(void) {
             _pBLEScan->clearResults();
+            data.clear();
+            data.shrink_to_fit();
         };
         
         /*!
@@ -120,7 +122,7 @@ class ATC_MiThermometer {
          *
          * \param duration Scan duration in seconds
          */                
-        unsigned getData(uint32_t duration);
+        void getData(uint32_t duration);
         
         /*!
          * \brief Set sensor data invalid.

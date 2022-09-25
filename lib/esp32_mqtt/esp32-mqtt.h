@@ -119,6 +119,33 @@ bool publishTelemetry(String subfolder, const char* data, int length) {
   return mqtt->publishTelemetry(subfolder, data, length);
 }
 
+String getDeviceId()
+{
+  String chipId = String((uint32_t)ESP.getEfuseMac(), HEX);
+  chipId.toUpperCase();
+  return chipId;
+}
+
+void sendBattery(char *macAddress, double batt, double rssi, long timestamp)
+{
+
+  char data[150] = {};
+  sprintf(data, "{\"deviceId\": \"%s\", \"mac\": \"%s\", \"batt\": %.1f, \"rssi\": %.0f, \"timestamp\": %d}", getDeviceId().c_str(), macAddress, batt, rssi, timestamp);
+  Serial.println(data);
+
+  publishTelemetry(data);
+}
+
+void sendTempAndHumidity(char *macAddress, double temperature, double humidity, double rssi, long timestamp)
+{
+  char data[150] = {};
+  sprintf(data, "{\"deviceId\": \"%s\", \"mac\": \"%s\", \"temp\": %.1f, \"humidity\": %.1f, \"rssi\": %.0f, \"timestamp\": %d}", getDeviceId().c_str(), macAddress, temperature, humidity, rssi, timestamp);
+  Serial.println(data);
+
+  publishTelemetry(data);
+}
+
+
 void connect() {
   connectWifi();
   // Changed this to false (from nothing)
