@@ -1,12 +1,7 @@
 #include <Arduino.h>
 #include <esp_task_wdt.h>
-#include "ATC_MiThermometer.h"
 
 #include "esp32-mqtt.h"
-
-const int scanTime = 5; // BLE scan time in seconds
-
-ATC_MiThermometer miThermometer;
 
 void setup()
 {
@@ -22,7 +17,6 @@ void setup()
   {
     connect();
   }
-  miThermometer.begin();
 }
 
 void loop()
@@ -47,40 +41,11 @@ void loop()
   esp_task_wdt_reset();
 
   // Set sensor data invalid
-  miThermometer.resetData();
 
-  // Get sensor data - run BLE scan for <scanTime>
-  miThermometer.getData(scanTime);
-
-  for (int i = 0; i < miThermometer.data.size(); i++)
-  {
-    if (miThermometer.data[i].valid)
-    {
-      unsigned long timestamp = time(nullptr);
-
-      String name = miThermometer.data[i].name.c_str();
-      name.toUpperCase();
-
-      char *macAddress = const_cast<char *>(name.c_str());
-
-      if (miThermometer.data[i].batt_level > 0)
-      {
-        sendBattery(macAddress, miThermometer.data[i].batt_level, miThermometer.data[i].rssi, timestamp);
-      }
-
-      if (miThermometer.data[i].temperature > 0)
-      {
-        sendTempAndHumidity(macAddress, miThermometer.data[i].temperature / 100.0, miThermometer.data[i].humidity / 100.0, miThermometer.data[i].rssi, timestamp);
-      }
-    }
-  }
-
-  // Delete results fromBLEScan buffer to release memory
-  miThermometer.clearScanResults();
-
-  Serial.println("*************************************");
-  Serial.println("Scanning ended");
-  Serial.println("*************************************");
+  unsigned long timestamp = time(nullptr);
+  
+  Serial.println(WiFi.macAddress());
+  //sendTempAndHumidity(WiFi.macAddress(), 25.0, 70.0, 100, timestamp);
 
   delay(5000);
 }
