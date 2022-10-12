@@ -17,9 +17,8 @@
 // Wifi network details.
 //const char *ssid = "TIVOLI";
 //const char *password = "kurt525kubik";
-const char *ssid = "TIVOLI";
-const char *password = "kurt525kubik";
-
+const char *ssid = "Speedo";
+const char *password = "Legehus2020";
 
 
 // Cloud iot details.
