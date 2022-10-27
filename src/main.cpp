@@ -4,7 +4,7 @@
 
 #include "esp32-mqtt.h"
 
-const int scanTime = 5; // BLE scan time in seconds
+const int scanTime = 15; // BLE scan time in seconds
 
 ATC_MiThermometer miThermometer;
 
@@ -12,7 +12,8 @@ void setup()
 {
   Serial.begin(115200);
 
-  esp_task_wdt_init(120, true);
+// Set watch dog timeout to 1+ second of scan time
+  esp_task_wdt_init(3 + 1, true);
 
   setupCloudIoT();
 
@@ -33,8 +34,11 @@ void loop()
   esp_task_wdt_add(NULL);
 
   delay(10);
-  esp_task_wdt_reset();
+  
   delay(100); // <- fixes some issues with WiFi stability
+
+  esp_task_wdt_init(3 + 1, true);
+  esp_task_wdt_reset();
 
   if (!mqttClient->connected())
   {
@@ -48,6 +52,9 @@ void loop()
 
   // Set sensor data invalid
   miThermometer.resetData();
+
+  esp_task_wdt_init(scanTime + 1, true);
+  esp_task_wdt_reset();
 
   // Get sensor data - run BLE scan for <scanTime>
   miThermometer.getData(scanTime);
@@ -81,6 +88,6 @@ void loop()
   Serial.println("*************************************");
   Serial.println("Scanning ended");
   Serial.println("*************************************");
-
-  delay(5000);
+  
+  delay(100);
 }

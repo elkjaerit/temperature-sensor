@@ -15,17 +15,16 @@
 // This file contains your configuration used to connect to Cloud IoT Core
 
 // Wifi network details.
-//const char *ssid = "TIVOLI";
-//const char *password = "kurt525kubik";
-const char *ssid = "Speedo";
-const char *password = "Legehus2020";
+const char *ssid = "TIVOLI";
+const char *password = "kurt525kubik";
+//const char *ssid = "Speedo";
+//const char *password = "Legehus2020";
 
 
 // Cloud iot details.
 const char *project_id = "smart-heating-1";
 const char *location = "us-central1";
 const char *registry_id = "my-registry";
-//const char *device_id = "cloud-sql-demo";
 const char *device_id = "cloud-sql-demo";
 
 // Configuration for NTP
