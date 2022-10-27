@@ -12,7 +12,6 @@ void setup()
 {
   Serial.begin(115200);
 
-// Set watch dog timeout to 1+ second of scan time
   esp_task_wdt_init(3 + 1, true);
 
   setupCloudIoT();
