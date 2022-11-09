@@ -5,16 +5,16 @@
 void send(String jsonString, String access_token){
     String request = "https://pubsub.googleapis.com/v1/projects/smart-heating-1/topics/temperature-sensor:publish";
     HTTPClient http;
-    
+
     // Start the request
-    
+
     http.begin(request);
     http.addHeader("Content-Type", "application/json");
     http.addHeader("Authorization", "Bearer " + access_token);
 
     // Base64 encode data
     String encoded = base64::encode(jsonString);
-
+    Serial.println("GatewayId: " + WiFi.macAddress());
     http.POST("{\"messages\":[{\"attributes\":{\"gatewayId\": \"" + WiFi.macAddress() + "\"},\"data\": \"" + encoded + "\"}]}");
 
     // Response from server
