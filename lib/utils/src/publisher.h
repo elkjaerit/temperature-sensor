@@ -14,7 +14,7 @@ void send(String jsonString, String access_token){
 
     // Base64 encode data
     String encoded = base64::encode(jsonString);
-    Serial.println("GatewayId: " + WiFi.macAddress());
+    
     http.POST("{\"messages\":[{\"attributes\":{\"gatewayId\": \"" + WiFi.macAddress() + "\"},\"data\": \"" + encoded + "\"}]}");
 
     // Response from server

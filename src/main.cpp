@@ -28,6 +28,7 @@ void setup()
 
   // put your setup code here, to run once:
   Serial.begin(115200);
+  Serial.println("GatewayId: " + WiFi.macAddress());
 
   // WiFiManager, Local intialization. Once its business is done, there is no need to keep it around
   WiFiManager wm;
