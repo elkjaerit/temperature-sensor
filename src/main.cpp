@@ -19,11 +19,13 @@ SignerConfig config;
 
 String response = "";
 
+uint32_t resetAfterMillis = 24 * 60 * 60 * 1000; // Reset after 1 day.
+uint32_t lastResetWas;
+
 void setup()
 {
-
   pinMode(LED_BUILTIN, OUTPUT);
-  // WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
+  WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP
   // it is a good practice to make sure your code sets wifi mode how you want it.
 
   // put your setup code here, to run once:
@@ -77,10 +79,12 @@ void setup()
     /* Create token */
     Signer.begin(&config);
 
-    esp_task_wdt_init(scanTime + 3, true);
+    esp_task_wdt_init(scanTime + 5, true);
     esp_task_wdt_reset();
 
     miThermometer.begin();
+
+    lastResetWas = millis();
   }
 }
 
@@ -114,5 +118,11 @@ void loop()
     send(sensorDataAsJson, access_token);
   }
 
-  delay(100);
+  esp_task_wdt_reset();
+  uint32_t now = millis();
+  if (now >= lastResetWas + resetAfterMillis)
+  {
+    lastResetWas = now;    
+    resetESP();
+  }  
 }
