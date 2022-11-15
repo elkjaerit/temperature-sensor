@@ -8,12 +8,8 @@ Setting up the "Xiaomi Mi Temperature and Humidity Monitor 2" to report data to 
 
 
 ## Setup ESP32
-In the future a complete Wifi Manager will be integrated but until that is completed WIFI settings must be edited in the code (we are developers ;-) ) 
-
-1. Open lib\util\src\config.h
-2. Look for *ssid and *password and change it
-3. Upload project with PlatformIO
-
+1. Upload project with PlatformIO
+2. Connect to access point SmartingHeatingAP and visit http://192.168.4.1 to enter credentials
 ## Upload custom firmware Xiaomi temperature sensor
 For better perfomance/stability the sensors must be flashed. 
 
