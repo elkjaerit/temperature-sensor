@@ -3,7 +3,7 @@
 #include <esp_task_wdt.h>
 #include "ATC_MiThermometer.h"
 #include <ArduinoJson.h>
-#include <ESPSigner.h>
+#include <ESP_Signer.h>
 #include <HTTPClient.h>
 
 #include "utils.h"
@@ -19,7 +19,7 @@ SignerConfig config;
 
 String response = "";
 
-uint32_t resetAfterMillis = 24 * 60 * 60 * 1000; // Reset after 1 day.
+uint32_t resetAfterMillis = 12 * 60 * 60 * 1000; // Reset after 12 hours.
 uint32_t lastResetWas;
 
 void setup()

@@ -42,6 +42,7 @@
         "utility": "cpp",
         "typeinfo": "cpp",
         "string": "cpp",
-        "string_view": "cpp"
+        "string_view": "cpp",
+        "random": "cpp"
     }
 }
