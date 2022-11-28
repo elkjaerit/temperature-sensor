@@ -98,7 +98,7 @@ void loop()
     esp_task_wdt_add(NULL);
     esp_task_wdt_reset();
 
-    Serial.println("Start scanning...");
+    Serial.println("Start scanning... - gateway id: " + WiFi.macAddress());
 
     // Set sensor data invalid
     miThermometer.resetData();
