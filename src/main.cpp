@@ -11,7 +11,9 @@
 #include "jsonutils.h"
 #include "publisher.h"
 
-const int scanTime = 30; // BLE scan time in seconds
+const int scanTime = 20; // BLE scan time in seconds
+const int sleeptime = 40;
+const int watchDogFeedInterval = scanTime + sleeptime + 10;
 
 ATC_MiThermometer miThermometer;
 
@@ -19,7 +21,7 @@ SignerConfig config;
 
 String response = "";
 
-uint32_t resetAfterMillis = 120 * 60 * 1000; // Reset after 120 minutes.
+uint32_t resetAfterMillis = 20 * 60 * 1000; // Reset after 20 minutes.
 uint32_t lastResetWas;
 
 void tokenStatusCallback(TokenInfo info)
@@ -35,6 +37,30 @@ void tokenStatusCallback(TokenInfo info)
     if (info.status == esp_signer_token_status_ready)
       Serial.printf("Token: %s\n", Signer.accessToken().c_str());
   }
+}
+
+void scanAndUploadData()
+{
+  Serial.println("Start scanning... - gateway id: " + WiFi.macAddress());
+  Serial.printf("Heap size: %i \n", ESP.getHeapSize());
+  Serial.printf("Free heap size: %i \n", ESP.getFreeHeap());
+  Serial.printf("Max alloc heap size: %i \n", ESP.getMaxAllocHeap());
+
+  // Get sensor data
+  miThermometer.resetData();
+  miThermometer.getData(scanTime);
+
+  String sensorDataAsJson = buildJson(miThermometer.data);
+
+  // Delete results fromBLEScan buffer to release memory
+  miThermometer.clearScanResults();
+
+  Serial.println("Scanning ended...");
+
+  Serial.println(sensorDataAsJson);
+
+  String access_token = Signer.accessToken().c_str();
+  send(sensorDataAsJson, access_token);
 }
 
 void setup()
@@ -96,9 +122,9 @@ void setup()
     /* Create token */
     Signer.begin(&config);
 
-    esp_task_wdt_init(scanTime + 10, true);
+    esp_task_wdt_init(watchDogFeedInterval, true);
     esp_task_wdt_reset();
-
+    esp_task_wdt_add(NULL);
     miThermometer.begin();
 
     lastResetWas = millis();
@@ -108,46 +134,28 @@ void setup()
 void loop()
 {
 
-  esp_task_wdt_add(NULL);
-  esp_task_wdt_reset();
-
-  Serial.printf("Heap size: %i \n", ESP.getHeapSize());
-  Serial.printf("Free heap size: %i \n", ESP.getFreeHeap());
-  Serial.printf("Max alloc heap size: %i \n", ESP.getMaxAllocHeap());
-
   /* Check for token generation ready state and also refresh the access token if it expired */
   bool ready = Signer.tokenReady();
   if (ready)
   {
-    Serial.println("Start scanning... - gateway id: " + WiFi.macAddress());
+    scanAndUploadData();
 
-    // Get sensor data
-    miThermometer.resetData();
-    miThermometer.getData(scanTime);
+    esp_task_wdt_reset(); // feed the dog
 
-    String sensorDataAsJson = buildJson(miThermometer.data);
-
-    // Delete results fromBLEScan buffer to release memory
-    miThermometer.clearScanResults();
-
-    Serial.println("Scanning ended...");
-
-    Serial.println(sensorDataAsJson);
-
-    String access_token = Signer.accessToken().c_str();
-    send(sensorDataAsJson, access_token);
+    Serial.printf("Going to sleet for: %d seconds.\n", sleeptime);
+    delay(sleeptime * 1000);
   }
   else
   {
+    delay(200);
     Serial.println("Token not ready");
   }
 
-  esp_task_wdt_reset();
+  // reboot
   uint32_t now = millis();
   if (now >= lastResetWas + resetAfterMillis)
   {
     lastResetWas = now;
-    resetESP();    
+    ESP.restart();
   }
-  delay(scanTime * 1000);
 }

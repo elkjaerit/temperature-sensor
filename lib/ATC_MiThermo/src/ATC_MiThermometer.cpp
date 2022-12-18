@@ -5,9 +5,9 @@ void ATC_MiThermometer::begin(void)
 {
     BLEDevice::init("");
     _pBLEScan = BLEDevice::getScan(); // create new scan
-    _pBLEScan->setActiveScan(false); // active scan uses more power, but get results faster
-    _pBLEScan->setInterval(100);
-    _pBLEScan->setWindow(99); // less or equal setInterval value
+    _pBLEScan->setActiveScan(true); // active scan uses more power, but get results faster
+    _pBLEScan->setInterval(500);
+    _pBLEScan->setWindow(499); // less or equal setInterval value
 }
 
 // Get sensor data by running BLE device scan
