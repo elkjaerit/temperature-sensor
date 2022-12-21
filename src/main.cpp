@@ -6,13 +6,17 @@
 #include <ESP_Signer.h>
 #include <HTTPClient.h>
 
+#include "time.h"
+
 #include "utils.h"
 #include "config.h"
 #include "jsonutils.h"
 #include "publisher.h"
 
-const int scanTime = 20; // BLE scan time in seconds
-const int sleeptime = 40;
+boolean blink = false;
+
+const int scanTime = 30; // BLE scan time in seconds
+const int sleeptime = 60 - scanTime;
 const int watchDogFeedInterval = scanTime + sleeptime + 10;
 
 ATC_MiThermometer miThermometer;
@@ -21,8 +25,22 @@ SignerConfig config;
 
 String response = "";
 
-uint32_t resetAfterMillis = 20 * 60 * 1000; // Reset after 20 minutes.
+uint32_t resetAfterMillis = 24 * 60 * 60 * 1000;
 uint32_t lastResetWas;
+
+const char *ntpServer = "pool.ntp.org";
+const long gmtOffset_sec = 3600;
+const int daylightOffset_sec = 3600;
+
+void printLocalTime()
+{
+  struct tm timeinfo;
+  while (!getLocalTime(&timeinfo))
+  {
+    Serial.println("Failed to obtain time");
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
 
 void tokenStatusCallback(TokenInfo info)
 {
@@ -37,6 +55,17 @@ void tokenStatusCallback(TokenInfo info)
     if (info.status == esp_signer_token_status_ready)
       Serial.printf("Token: %s\n", Signer.accessToken().c_str());
   }
+}
+
+
+void printTokenStatus()
+{
+  int t = Signer.getExpiredTimestamp() - config.signer.preRefreshSeconds - time(nullptr);
+  // Token will be refreshed automatically
+
+  Serial.print("Remaining seconds to refresh the token, ");
+  Serial.println(t);
+  delay(1000);
 }
 
 void scanAndUploadData()
@@ -59,6 +88,8 @@ void scanAndUploadData()
 
   Serial.println(sensorDataAsJson);
 
+  Serial.println("Get access token");
+  printTokenStatus();
   String access_token = Signer.accessToken().c_str();
   send(sensorDataAsJson, access_token);
 }
@@ -95,13 +126,14 @@ void setup()
   if (!res)
   {
     Serial.println("Failed to connect");
-    ESP.restart();
+    resetESP();
   }
   else
   {
     // if you get here you have connected to the WiFi
     Serial.println("connected...yeey :)");
-    digitalWrite(LED_BUILTIN, HIGH); // turn the LED on
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    printLocalTime();
 
     Serial.println();
     Serial.print("Connected with IP: ");
@@ -133,22 +165,37 @@ void setup()
 
 void loop()
 {
-
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  printLocalTime();
   /* Check for token generation ready state and also refresh the access token if it expired */
   bool ready = Signer.tokenReady();
   if (ready)
   {
+    digitalWrite(LED_BUILTIN, HIGH); // turn the LED on
+
     scanAndUploadData();
 
     esp_task_wdt_reset(); // feed the dog
 
-    Serial.printf("Going to sleet for: %d seconds.\n", sleeptime);
+    Serial.printf("Going to sleep for: %d seconds.\n", sleeptime);
     delay(sleeptime * 1000);
   }
   else
   {
+
+    if (blink)
+    {
+      blink = false;
+      digitalWrite(LED_BUILTIN, HIGH); // turn the LED on
+    }
+    else
+    {
+      blink = false;
+      digitalWrite(LED_BUILTIN, LOW); // turn the LED on
+    }
+
+    Serial.println("Token not ready...");
     delay(200);
-    Serial.println("Token not ready");
   }
 
   // reboot
@@ -156,6 +203,6 @@ void loop()
   if (now >= lastResetWas + resetAfterMillis)
   {
     lastResetWas = now;
-    ESP.restart();
+    resetESP();
   }
 }

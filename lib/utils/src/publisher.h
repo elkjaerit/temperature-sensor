@@ -19,6 +19,7 @@ void send(String jsonString, String access_token)
   int statusCode = http.POST("{\"messages\":[{\"attributes\":{\"gatewayId\": \"" + WiFi.macAddress() + "\"},\"data\": \"" + encoded + "\"}]}");
   
   if (statusCode != 200){
+    Serial.println("Error calling POST - status code: " + statusCode);
     ESP.restart();
     //resetESP();
   }
