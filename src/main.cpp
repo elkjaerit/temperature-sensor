@@ -16,7 +16,7 @@
 boolean blink = false;
 
 const int scanTime = 30; // BLE scan time in seconds
-const int sleeptime = 60 - scanTime;
+const int sleeptime = 60*3 - scanTime;
 const int watchDogFeedInterval = scanTime + sleeptime + 10;
 
 ATC_MiThermometer miThermometer;
