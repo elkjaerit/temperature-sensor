@@ -1,0 +1,392 @@
+Index: lib/Status/src/Status.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/Status/src/Status.cpp b/lib/Status/src/Status.cpp
+new file mode 100644
+--- /dev/null	(date 1672693400740)
++++ b/lib/Status/src/Status.cpp	(date 1672693400740)
+@@ -0,0 +1,61 @@
++#include "Status.h"
++#include "Arduino.h"
++#include <SPIFFS.h>
++#include <string>
++
++Status::Status(std::string ss)
++{
++    statusFileName = ss;
++    if (SPIFFS.begin(true))
++    {
++        Serial.println("Mounted file system");
++        if (SPIFFS.exists(statusFileName.c_str()))
++        {
++            File configFile = SPIFFS.open(statusFileName.c_str(), "r");
++            if (json.readFrom(configFile))
++            {
++                json.toString(Serial, true /* prettify option */);
++                Serial.println("");
++            }
++
++            configFile.close();
++        }
++    }
++}
++
++void Status::persist()
++{
++    File file = SPIFFS.open(statusFileName.c_str(), "w");
++    json.toString(file);
++
++    // Due to bugs in SPIFFS print
++    // https://github.com/esp8266/Arduino/issues/8372
++    // append new line to separate each JSON data (recommended)
++    //file.println();
++
++    file.close();
++
++    Serial.println("Persisted file");
++    json.toString(Serial, true /* prettify option */);
++    Serial.println("");
++}
++
++void Status::setUpdated()
++{
++    json.set("apiTokenUpdated", true);
++    persist();
++}
++
++bool Status::isUpdated()
++{
++    FirebaseJsonData result;
++    json.get(result, "apiTokenUpdated");
++
++    if (result.success)
++    {
++        if (result.typeNum == FirebaseJson::JSON_BOOL)
++            return result.to<bool>();
++    }
++
++    return false;
++}
+Index: lib/Status/src/Status.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/Status/src/Status.h b/lib/Status/src/Status.h
+new file mode 100644
+--- /dev/null	(date 1672667921859)
++++ b/lib/Status/src/Status.h	(date 1672667921859)
+@@ -0,0 +1,15 @@
++#include <string>
++#include <Firebase_ESP_Client.h>
++
++class Status
++{
++
++private:
++    std::string statusFileName;
++    FirebaseJson json;
++    void persist();
++public:
++    Status(std::string ss);    
++    void setUpdated();
++    bool isUpdated();
++};
+\ No newline at end of file
+Index: temperature-sensor.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/temperature-sensor.iml b/temperature-sensor.iml
+new file mode 100644
+--- /dev/null	(date 1672771337424)
++++ b/temperature-sensor.iml	(date 1672771337424)
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<module type="WEB_MODULE" version="4">
++  <component name="NewModuleRootManager" inherit-compiler-output="true">
++    <exclude-output />
++    <content url="file://$MODULE_DIR$" />
++    <orderEntry type="inheritedJdk" />
++    <orderEntry type="sourceFolder" forTests="false" />
++  </component>
++</module>
+\ No newline at end of file
+Index: lib/Firebase/src/UpdateGateWayId.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/Firebase/src/UpdateGateWayId.h b/lib/Firebase/src/UpdateGateWayId.h
+new file mode 100644
+--- /dev/null	(date 1672669553940)
++++ b/lib/Firebase/src/UpdateGateWayId.h	(date 1672669553940)
+@@ -0,0 +1,38 @@
++#include <Arduino.h>
++#include <Firebase_ESP_Client.h>
++
++#define PROJECT_LOCATION "europe-west1"
++
++#define FIREBASE_PROJECT_ID "smart-heating-1"
++#define FIREBASE_CLIENT_EMAIL "esp-temp-sensor@smart-heating-1.iam.gserviceaccount.com"
++const char PRIVATE_KEY[] PROGMEM = "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDBU44J69xWE3IU\nmrh0Qon7z4gSWPqrjkKJFIyfLuHaSOg/F/WhSWTJLph+QfmRK5jZJ9E2FVIDWYyZ\nzWIK7tyJ/MWclv50csbGJxe6zcL6Gve5qZG96hDN2+IM4h1wEbrBMsJbPspwJwQF\n/Y4j41NoWIxf2YWS0BFbEBRaQckmPi3W1XhtMz38K/1C7E0uyFJ70B+EK1/DUGJc\n0t1drRdDOT5Zqse94Y+oQiU6EmginAXYQuEgUKWrDMktT7W9HoCKNFB94p/2+0Wu\nJUVGjtPsgu0ZyHr5rGEIXq5EZZGb4x8Xj6Yy8BWgx5TWfs4EHc32zOvMi2pMILJR\nlWgKvQUdAgMBAAECggEAHXglILIJZj2UmDt1fpNeATqDXXiezWPkFI1DWkiFOQcA\nEA4Q7UMIz/oAWM6pwk1JAWEmbP4XAFe4LQG3vj7m80nKvbHum8WbMz1mSp1u6T0P\nIggNJUv2v8qSzK/zGNA7DZQ1OD98EFiCLn+WGTZf0noc+8dmqxh4bM8oqxF4HhH8\nJHvlpiuPXvO//QxccGxnfRNdZCTZFfqdBMPVy/JCwuMBJwUWjb40KCLmOquMnxO2\nof35jhzLZyZPqnoDc+9Urz3itJ0n6LlDvUHHdnUXTtlsJiDfgmUBHEp4GfRvuzDG\n/n/vNEyERmFtlUXd7dj71GxXlroejuSDiYw90a/EwQKBgQD4Hhv09+7KNon4L8fJ\naJKowBl9VlCrwD4ogNIXhHuc9UpENl88Z/lvweEuS1wFRnTXlk4aslnqCf6wGk0n\ngli9FnrgnAIQV7cO6CoFXE40cr3A8qGW1gvXRNeycT82Lbre9p3VDEc7qlUYwtgS\nAWApi+Rro7H2doEZ/EjiMX7zFQKBgQDHd9btpiFOPjLHzx+OdzW3bkA7LTuwtfId\n/qCCM83TwnwfPj9BQZeCSym01FLf2IFxC6pesdzdC964jEdWKXsTFPI5iw+lxAjn\nhotzxncBrLH6mr+hEe6oYPtdf7Lyh0794RztSC9fCghlQIKfa3mWv6xh8feBCAb1\nMuo9Ojhr6QKBgAyhO7sUg8s3S36esATIle6RGLsQkbqsZn2ZURhxXfl3Yvhl7CMf\nB8twiw3YOC7sjzYKKJ+jRIBtUdGVBShlsi6t3kNgrZo3XNIdb0YmlLSGwrH3p9IN\nwzyJ/JDQwu73FPQUiaQ2o8mdugcwo98GwuZagJ4aDw0Eqz2vYeZhrpyhAoGAMpNP\nOriZz0X0CDebL7tIMndQ7/A7J0Yq2rIaLolGEgBJCn70+O3Rpaa7L296h+lUgL5N\nd28vqhh9Y1umJtGjtCXmePKqiARZoaK6ryNOP21zPzCHkCaE1cqpUX60d8wZGkQ+\n2mcoI7fegxXFSPiuPqvg4IDCmcPYR8meHOIrNikCgYEAgvId6EYpdVY97DI7njcO\nIoGUGzDQdWiD6CfLsP3eliKXroHa89R60RhWkx/fTAi3qx1rdMwvtw2VR3fbPc+O\nKmfwwErZZ5xpS6ihB0/m3mUq8caE/GAiiJoF8xrUEcDAYtkZnB/Opln6nKKzbrAF\nO4oLCGAjpNCljMfHeM5uG0s=\n-----END PRIVATE KEY-----\n";
++
++// Define Firebase Data object
++FirebaseData fbdo;
++
++boolean callFunction(String key)
++{
++    Serial.println(Firebase.getToken());
++    Serial.print("Call the Cloud Function... ");
++
++    FirebaseJson payload;
++    payload.set("id", key);
++    payload.set("gatewayId", WiFi.macAddress());
++    Serial.println("Mac: " + WiFi.macAddress());
++    if (Firebase.Functions.callFunction(&fbdo, FIREBASE_PROJECT_ID, PROJECT_LOCATION, "api-http-linkTempSensor", payload.raw()))
++    {
++
++        FirebaseJson js;
++        js.setJsonData(fbdo.payload());
++
++        FirebaseJsonData result;
++        js.get(result, "result");
++        return result.success;
++    }
++
++    else
++    {
++        Serial.println(fbdo.errorReason());
++        return false;
++    }
++}
+Index: lib/utils/src/publisher.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include <HTTPClient.h>\r\n#include <base64.h>\r\n#include <ArduinoJson.h>\r\n\r\nvoid send(String jsonString, String access_token)\r\n{\r\n  String request = \"https://pubsub.googleapis.com/v1/projects/smart-heating-1/topics/temperature-sensor:publish\";\r\n  HTTPClient http;\r\n\r\n  // Start the request\r\n\r\n  http.begin(request);\r\n  http.addHeader(\"Content-Type\", \"application/json\");\r\n  http.addHeader(\"Authorization\", \"Bearer \" + access_token);\r\n\r\n  // Base64 encode data\r\n  String encoded = base64::encode(jsonString);\r\n\r\n  int statusCode = http.POST(\"{\\\"messages\\\":[{\\\"attributes\\\":{\\\"gatewayId\\\": \\\"\" + WiFi.macAddress() + \"\\\"},\\\"data\\\": \\\"\" + encoded + \"\\\"}]}\");\r\n  \r\n  if (statusCode != 200){\r\n    Serial.println(\"Error calling POST - status code: \" + statusCode);\r\n    ESP.restart();\r\n    //resetESP();\r\n  }\r\n  \r\n  // Response from server\r\n  String response = http.getString();\r\n  Serial.printf(response.c_str());\r\n\r\n  // Parse JSON, read error if any\r\n  DynamicJsonDocument doc(2048);\r\n  DeserializationError error = deserializeJson(doc, response);\r\n  if (error)\r\n  {\r\n    Serial.print(F(\"deserializeJson() failed: \"));\r\n    Serial.println(error.f_str());\r\n\r\n    resetESP();\r\n\r\n    return;\r\n  }\r\n  // Print parsed value on Serial Monitor\r\n  Serial.println(doc[\"messageIds\"].as<char *>());\r\n  // Close connection\r\n\r\n  http.end();\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/lib/utils/src/publisher.h b/lib/utils/src/publisher.h
+--- a/lib/utils/src/publisher.h	(revision 73427c2f0526ed276456b69920f3e2712aa1d76a)
++++ b/lib/utils/src/publisher.h	(date 1672723387059)
+@@ -15,9 +15,10 @@
+ 
+   // Base64 encode data
+   String encoded = base64::encode(jsonString);
+-
++  Serial.println();
++  Serial.println("Sending data - using auth: " +access_token);
+   int statusCode = http.POST("{\"messages\":[{\"attributes\":{\"gatewayId\": \"" + WiFi.macAddress() + "\"},\"data\": \"" + encoded + "\"}]}");
+-  
++Serial.println("Statuscode: " + statusCode);
+   if (statusCode != 200){
+     Serial.println("Error calling POST - status code: " + statusCode);
+     ESP.restart();
+Index: src/main.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>#include <Arduino.h>\r\n#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager\r\n#include <esp_task_wdt.h>\r\n#include \"ATC_MiThermometer.h\"\r\n#include <ArduinoJson.h>\r\n\r\n#include <addons/TokenHelper.h>\r\n\r\n#include <HTTPClient.h>\r\n\r\n#include \"time.h\"\r\n\r\n#include \"utils.h\"\r\n#include \"config.h\"\r\n#include \"jsonutils.h\"\r\n#include \"publisher.h\"\r\n\r\nFirebaseAuth auth;\r\nFirebaseConfig config;\r\n\r\nconst int scanTime = 30; // BLE scan time in seconds\r\nconst int sleeptime = 60 * 3 - scanTime;\r\nconst int watchDogFeedInterval = scanTime + sleeptime + 10;\r\n\r\nATC_MiThermometer miThermometer;\r\n\r\nuint32_t resetAfterMillis = 24 * 60 * 60 * 1000;\r\nuint32_t lastResetWas;\r\n\r\nconst char *ntpServer = \"pool.ntp.org\";\r\nconst long gmtOffset_sec = 3600;\r\nconst int daylightOffset_sec = 3600;\r\n\r\nvoid printLocalTime()\r\n{\r\n  struct tm timeinfo;\r\n  while (!getLocalTime(&timeinfo))\r\n  {\r\n    Serial.println(\"Failed to obtain time\");\r\n  }\r\n  Serial.println(&timeinfo, \"%A, %B %d %Y %H:%M:%S\");\r\n}\r\n\r\nvoid scanAndUploadData()\r\n{\r\n  // Get sensor data\r\n  miThermometer.resetData();\r\n  miThermometer.getData(scanTime);\r\n\r\n  String sensorDataAsJson = buildJson(miThermometer.data);\r\n\r\n  // Delete results fromBLEScan buffer to release memory\r\n  miThermometer.clearScanResults();\r\n\r\n  Serial.println(\"Scanning ended...\");\r\n\r\n  Serial.println(sensorDataAsJson);\r\n\r\n  send(sensorDataAsJson, String(Firebase.getToken()));\r\n}\r\n\r\nvoid setup()\r\n{\r\n  Serial.begin(115200);\r\n  pinMode(LED_BUILTIN, OUTPUT);\r\n  WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP\r\n\r\n  // WiFiManager, Local intialization. Once its business is done, there is no need to keep it around\r\n  WiFiManager wm;\r\n  digitalWrite(LED_BUILTIN, LOW); // turn the LED off\r\n\r\n  // wm.resetSettings();\r\n\r\n  wm.setConfigPortalTimeout(180);\r\n\r\n  if (!wm.autoConnect(\"SmartHeatingAP\"))\r\n  {\r\n    Serial.println(\"Failed to connect\");\r\n    resetESP();\r\n  }\r\n  else\r\n  {\r\n    // if you get here you have connected to the WiFi\r\n    Serial.println(\"connected...yeey :)\");\r\n    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);\r\n    printLocalTime();\r\n\r\n    /* Assign the sevice account credentials and private key (required) */\r\n    config.service_account.data.client_email = \"esp-temp-sensor@smart-heating-1.iam.gserviceaccount.com\";\r\n    config.service_account.data.project_id = \"smart-heating-1\";\r\n    config.service_account.data.private_key = \"-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDBU44J69xWE3IU\\nmrh0Qon7z4gSWPqrjkKJFIyfLuHaSOg/F/WhSWTJLph+QfmRK5jZJ9E2FVIDWYyZ\\nzWIK7tyJ/MWclv50csbGJxe6zcL6Gve5qZG96hDN2+IM4h1wEbrBMsJbPspwJwQF\\n/Y4j41NoWIxf2YWS0BFbEBRaQckmPi3W1XhtMz38K/1C7E0uyFJ70B+EK1/DUGJc\\n0t1drRdDOT5Zqse94Y+oQiU6EmginAXYQuEgUKWrDMktT7W9HoCKNFB94p/2+0Wu\\nJUVGjtPsgu0ZyHr5rGEIXq5EZZGb4x8Xj6Yy8BWgx5TWfs4EHc32zOvMi2pMILJR\\nlWgKvQUdAgMBAAECggEAHXglILIJZj2UmDt1fpNeATqDXXiezWPkFI1DWkiFOQcA\\nEA4Q7UMIz/oAWM6pwk1JAWEmbP4XAFe4LQG3vj7m80nKvbHum8WbMz1mSp1u6T0P\\nIggNJUv2v8qSzK/zGNA7DZQ1OD98EFiCLn+WGTZf0noc+8dmqxh4bM8oqxF4HhH8\\nJHvlpiuPXvO//QxccGxnfRNdZCTZFfqdBMPVy/JCwuMBJwUWjb40KCLmOquMnxO2\\nof35jhzLZyZPqnoDc+9Urz3itJ0n6LlDvUHHdnUXTtlsJiDfgmUBHEp4GfRvuzDG\\n/n/vNEyERmFtlUXd7dj71GxXlroejuSDiYw90a/EwQKBgQD4Hhv09+7KNon4L8fJ\\naJKowBl9VlCrwD4ogNIXhHuc9UpENl88Z/lvweEuS1wFRnTXlk4aslnqCf6wGk0n\\ngli9FnrgnAIQV7cO6CoFXE40cr3A8qGW1gvXRNeycT82Lbre9p3VDEc7qlUYwtgS\\nAWApi+Rro7H2doEZ/EjiMX7zFQKBgQDHd9btpiFOPjLHzx+OdzW3bkA7LTuwtfId\\n/qCCM83TwnwfPj9BQZeCSym01FLf2IFxC6pesdzdC964jEdWKXsTFPI5iw+lxAjn\\nhotzxncBrLH6mr+hEe6oYPtdf7Lyh0794RztSC9fCghlQIKfa3mWv6xh8feBCAb1\\nMuo9Ojhr6QKBgAyhO7sUg8s3S36esATIle6RGLsQkbqsZn2ZURhxXfl3Yvhl7CMf\\nB8twiw3YOC7sjzYKKJ+jRIBtUdGVBShlsi6t3kNgrZo3XNIdb0YmlLSGwrH3p9IN\\nwzyJ/JDQwu73FPQUiaQ2o8mdugcwo98GwuZagJ4aDw0Eqz2vYeZhrpyhAoGAMpNP\\nOriZz0X0CDebL7tIMndQ7/A7J0Yq2rIaLolGEgBJCn70+O3Rpaa7L296h+lUgL5N\\nd28vqhh9Y1umJtGjtCXmePKqiARZoaK6ryNOP21zPzCHkCaE1cqpUX60d8wZGkQ+\\n2mcoI7fegxXFSPiuPqvg4IDCmcPYR8meHOIrNikCgYEAgvId6EYpdVY97DI7njcO\\nIoGUGzDQdWiD6CfLsP3eliKXroHa89R60RhWkx/fTAi3qx1rdMwvtw2VR3fbPc+O\\nKmfwwErZZ5xpS6ihB0/m3mUq8caE/GAiiJoF8xrUEcDAYtkZnB/Opln6nKKzbrAF\\nO4oLCGAjpNCljMfHeM5uG0s=\\n-----END PRIVATE KEY-----\\n\";\r\n    config.signer.tokens.scope = \"https://www.googleapis.com/auth/cloud-platform, https://www.googleapis.com/auth/userinfo.email\";\r\n    config.signer.expiredSeconds = 3600;\r\n    config.token_status_callback = tokenStatusCallback; // see addons/TokenHelper.h\r\n\r\n    /* Create token */\r\n    Firebase.begin(&config, &auth);\r\n\r\n    esp_task_wdt_init(watchDogFeedInterval, true);\r\n    esp_task_wdt_reset();\r\n    esp_task_wdt_add(NULL);\r\n\r\n    miThermometer.begin();\r\n\r\n    lastResetWas = millis();\r\n  }\r\n}\r\n\r\nvoid loop()\r\n{\r\n  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);\r\n  printLocalTime();\r\n  if (Firebase.ready())\r\n  {\r\n    digitalWrite(LED_BUILTIN, HIGH); // turn the LED on\r\n\r\n    scanAndUploadData();\r\n\r\n    esp_task_wdt_reset(); // feed the dog\r\n\r\n    Serial.printf(\"Going to sleep for: %d seconds.\\n\", sleeptime);\r\n    delay(sleeptime * 1000);\r\n  }\r\n  else\r\n  {\r\n    delay(200);\r\n  }\r\n\r\n  // reboot\r\n  uint32_t now = millis();\r\n  if (now >= lastResetWas + resetAfterMillis)\r\n  {\r\n    lastResetWas = now;\r\n    resetESP();\r\n  }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main.cpp b/src/main.cpp
+--- a/src/main.cpp	(revision 73427c2f0526ed276456b69920f3e2712aa1d76a)
++++ b/src/main.cpp	(date 1672723053947)
+@@ -14,23 +14,37 @@
+ #include "config.h"
+ #include "jsonutils.h"
+ #include "publisher.h"
++#include "Status.h"
++#include "UpdateGateWayId.h"
+ 
+ FirebaseAuth auth;
+ FirebaseConfig config;
+ 
+-const int scanTime = 30; // BLE scan time in seconds
+-const int sleeptime = 60 * 3 - scanTime;
++const int scanTime = 10; // BLE scan time in seconds
++const int sleeptime = 40 - scanTime;
+ const int watchDogFeedInterval = scanTime + sleeptime + 10;
+ 
+ ATC_MiThermometer miThermometer;
+ 
+-uint32_t resetAfterMillis = 24 * 60 * 60 * 1000;
++uint32_t resetAfterMillis = 2 * 60 * 60 * 1000;
+ uint32_t lastResetWas;
+ 
+ const char *ntpServer = "pool.ntp.org";
+ const long gmtOffset_sec = 3600;
+ const int daylightOffset_sec = 3600;
+ 
++char linkKey[34] = "";
++
++// flag for saving data
++bool shouldSaveConfig = false;
++
++// callback notifying us of the need to save config
++void saveConfigCallback()
++{
++  Serial.println("Should save config");
++  shouldSaveConfig = true;
++}
++
+ void printLocalTime()
+ {
+   struct tm timeinfo;
+@@ -69,8 +83,20 @@
+   WiFiManager wm;
+   digitalWrite(LED_BUILTIN, LOW); // turn the LED off
+ 
+-  // wm.resetSettings();
++  //wm.resetSettings();
+ 
++  WiFiManagerParameter custom_api_token("apikey", "API token", linkKey, 4);
++  WiFiManagerParameter custom_text("<h2>Link kode</h2><p>Indtast den 4 cifrede kode som blev udleveret</p>");
++
++  wm.addParameter(&custom_text);
++  // set config save notify callback
++  wm.setSaveConfigCallback(saveConfigCallback);
++
++  // add all your parameters here
++  wm.addParameter(&custom_api_token);
++
++  wm.setMinimumSignalQuality();
++
+   wm.setConfigPortalTimeout(180);
+ 
+   if (!wm.autoConnect("SmartHeatingAP"))
+@@ -95,6 +121,32 @@
+ 
+     /* Create token */
+     Firebase.begin(&config, &auth);
++    Firebase.reconnectWiFi(true);
++
++    strcpy(linkKey, custom_api_token.getValue());
++
++    while (!Firebase.ready())
++    {
++      delay(500);
++      Serial.println("Firebase not ready");
++    }
++
++    Serial.println("saving config");
++
++    Status status("/config.json");
++
++    if (status.isUpdated())
++    {
++      Serial.println("Is updated !!");
++    }
++    else
++    {
++      Serial.println("Is NOT updated !!");
++      if (callFunction(String(linkKey)))
++      {
++        status.setUpdated();
++      }
++    }
+ 
+     esp_task_wdt_init(watchDogFeedInterval, true);
+     esp_task_wdt_reset();
+Index: .idea/.gitignore
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/.gitignore b/.idea/.gitignore
+new file mode 100644
+--- /dev/null	(date 1672771345110)
++++ b/.idea/.gitignore	(date 1672771345110)
+@@ -0,0 +1,8 @@
++# Default ignored files
++/shelf/
++/workspace.xml
++# Editor-based HTTP Client requests
++/httpRequests/
++# Datasource local storage ignored files
++/dataSources/
++/dataSources.local.xml
+Index: .idea/checkstyle-idea.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/checkstyle-idea.xml b/.idea/checkstyle-idea.xml
+new file mode 100644
+--- /dev/null	(date 1672771383096)
++++ b/.idea/checkstyle-idea.xml	(date 1672771383096)
+@@ -0,0 +1,16 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="CheckStyle-IDEA" serialisationVersion="2">
++    <checkstyleVersion>10.4</checkstyleVersion>
++    <scanScope>JavaOnly</scanScope>
++    <copyLibs>true</copyLibs>
++    <option name="thirdPartyClasspath" />
++    <option name="activeLocationIds" />
++    <option name="locations">
++      <list>
++        <ConfigurationLocation id="bundled-sun-checks" type="BUNDLED" scope="All" description="Sun Checks">(bundled)</ConfigurationLocation>
++        <ConfigurationLocation id="bundled-google-checks" type="BUNDLED" scope="All" description="Google Checks">(bundled)</ConfigurationLocation>
++      </list>
++    </option>
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/modules.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/modules.xml b/.idea/modules.xml
+new file mode 100644
+--- /dev/null	(date 1672771337475)
++++ b/.idea/modules.xml	(date 1672771337475)
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ProjectModuleManager">
++    <modules>
++      <module fileurl="file://$PROJECT_DIR$/temperature-sensor.iml" filepath="$PROJECT_DIR$/temperature-sensor.iml" />
++    </modules>
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/misc.xml b/.idea/misc.xml
+new file mode 100644
+--- /dev/null	(date 1672771337527)
++++ b/.idea/misc.xml	(date 1672771337527)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ProjectRootManager">
++    <output url="file://$PROJECT_DIR$/out" />
++  </component>
++</project>
+\ No newline at end of file
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+new file mode 100644
+--- /dev/null	(date 1672771337571)
++++ b/.idea/vcs.xml	(date 1672771337571)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="VcsDirectoryMappings">
++    <mapping directory="" vcs="Git" />
++  </component>
++</project>
+\ No newline at end of file

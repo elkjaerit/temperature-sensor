@@ -17,32 +17,13 @@ void send(String jsonString, String access_token)
   String encoded = base64::encode(jsonString);
 
   int statusCode = http.POST("{\"messages\":[{\"attributes\":{\"gatewayId\": \"" + WiFi.macAddress() + "\"},\"data\": \"" + encoded + "\"}]}");
-  
-  if (statusCode != 200){
-    Serial.println("Error calling POST - status code: " + statusCode);
-    ESP.restart();
-    //resetESP();
-  }
-  
-  // Response from server
-  String response = http.getString();
-  Serial.printf(response.c_str());
 
-  // Parse JSON, read error if any
-  DynamicJsonDocument doc(2048);
-  DeserializationError error = deserializeJson(doc, response);
-  if (error)
+  log_i("Status code %i", statusCode);
+
+  if (statusCode != 200)
   {
-    Serial.print(F("deserializeJson() failed: "));
-    Serial.println(error.f_str());
-
-    resetESP();
-
-    return;
+    ESP.restart();
   }
-  // Print parsed value on Serial Monitor
-  Serial.println(doc["messageIds"].as<char *>());
-  // Close connection
 
-  http.end();
+  http.end(); // Close connection
 }
